@@ -24,6 +24,8 @@ namespace GadgeteerMtrCtrl
 
         private SpiController controller;
 
+        private int speed = 10;
+
         // This method is run when the mainboard is powered up or reset.   
         void ProgramStarted()
         {
@@ -87,36 +89,67 @@ namespace GadgeteerMtrCtrl
                 return;
             }
 
-            if (controller.IsUp)
+            if (controller.Mode == SpiController.EMode.Digital)
             {
-                // 上ボタン押下なら左モーターを前進
-                SetMotorState(40, mtrLeft, ledLeft);
-            }
-            else if (controller.IsDown)
-            {
-                // 下ボタン押下なら左モーターを後退
-                SetMotorState(-40, mtrLeft, ledLeft);
-            }
-            else if (controller.NotUpDown)
-            {
-                // 上下ボタンどちらも非押下なら左モーターを停止
-                SetMotorState(0, mtrLeft, ledLeft);
+                mtrLeft.SetSpeed(0);
+                mtrRight.SetSpeed(0);
+                ledLeft.TurnRed();
+                ledRight.TurnRed();
+                return;
             }
 
-            if (controller.IsTriungle)
+            if (controller.IsL2)
             {
-                // △ボタン押下なら右モーターを前進
-                SetMotorState(40, mtrRight, ledRight);
+                this.speed += 10;
             }
-            else if (controller.IsCross)
+            if (controller.IsR2)
             {
-                // ×ボタン押下なら右モーターを後退
-                SetMotorState(-40, mtrRight, ledRight);
+                this.speed -= 10;
             }
-            else if (controller.NotTriungleCross)
+
+            if (speed > 100) speed = 100;
+            else if (speed < 10) speed = 10;
+
+            if (controller.IsL1)
             {
-                // △×ボタンどちらも非押下なら右モーターを停止
-                SetMotorState(0, mtrRight, ledRight);
+                mtrLeft.Brake();
+                ledLeft.TurnWhite();
+            }
+            else
+            {
+                if (controller.NotUpDown)
+                {
+                    SetMotorStateRate(0, false, mtrLeft, ledLeft);
+                }
+                else if (controller.IsUp)
+                {
+                    SetMotorStateRate(speed, true, mtrLeft, ledLeft);
+                }
+                else if (controller.IsDown)
+                {
+                    SetMotorStateRate(speed, false, mtrLeft, ledLeft);
+                }
+            }
+
+            if (controller.IsR1)
+            {
+                mtrRight.Brake();
+                ledRight.TurnWhite();
+            }
+            else
+            {
+                if (controller.NotTriungleCross)
+                {
+                    SetMotorStateRate(0, false, mtrRight, ledRight);
+                }
+                else if (controller.IsTriungle)
+                {
+                    SetMotorStateRate(speed, true, mtrRight, ledRight);
+                }
+                else if (controller.IsCross)
+                {
+                    SetMotorStateRate(speed, false, mtrRight, ledRight);
+                }
             }
         }
 
@@ -145,6 +178,21 @@ namespace GadgeteerMtrCtrl
             }
 
             mtr.SetSpeed(speed);
+        }
+
+        private void SetMotorStateRate(int speed, bool forward, I2CMotrorDriver mtr, GTM.GHIElectronics.MulticolorLed led)
+        {
+            if (speed == 0)
+            {
+                led.TurnOff();
+                mtr.SetSpeed(0);
+                return;
+            }
+
+            speed *= forward ? 1 : -1;
+            mtr.SetSpeedRate(speed);
+            if (forward) led.TurnGreen();
+            else led.TurnBlue();
         }
     }
 }

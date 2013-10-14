@@ -32,6 +32,10 @@ namespace GadgeteerMtrCtrl
         private const byte MTR_BRAKE = 0x03;
         private const byte MTR_STATE_BIT = 0x03;
 
+        private const byte MTR_DRV_MAX_SPEED = 0x3F;
+
+        private byte maxSpeed;
+
         private GTI.I2CBus i2c;
 
         /// <summary>
@@ -39,9 +43,16 @@ namespace GadgeteerMtrCtrl
         /// </summary>
         /// <param name="socket">接続ソケット</param>
         /// <param name="addr">ドライバモジュールアドレス</param>
-        public I2CMotrorDriver(GT.Socket socket, ushort addr)
+        public I2CMotrorDriver(GT.Socket socket, ushort addr, byte max = MTR_DRV_MAX_SPEED)
         {
             i2c = new GTI.I2CBus(socket, addr, 100, null);
+
+            if (max < 0 || MTR_DRV_MAX_SPEED < max)
+            {
+                max = MTR_DRV_MAX_SPEED;
+            }
+
+            maxSpeed = max;
         }
 
         /// <summary>
@@ -100,11 +111,34 @@ namespace GadgeteerMtrCtrl
                 power = (byte)((-1 * speed) & 0x3f);
             }
 
+            if (power > maxSpeed)
+            {
+                power = maxSpeed;
+            }
+
             power = (byte)((power << 2) | dir);
 
             byte[] write = new byte[] { 0x00, power };
 
             i2c.Write(write, COMM_TIMEOUT);
+        }
+
+        public void SetSpeedRate(int rate)
+        {
+            int speed = 0;
+
+            if (rate > 100)
+            {
+                rate = 100;
+            }
+            else if (rate < -100)
+            {
+                rate = -100;
+            }
+
+            speed = (int)(maxSpeed * rate / 100.0);
+
+            SetSpeed(speed);
         }
     }
 }

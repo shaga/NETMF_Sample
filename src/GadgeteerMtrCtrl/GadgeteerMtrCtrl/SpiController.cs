@@ -17,9 +17,18 @@ namespace GadgeteerMtrCtrl
         private const int RCV_RES_POS = 2;
         private const int RCV_DIGITAL_UPPER_POS = 3;
         private const int RCV_DIGITAL_LOWER_POS = 4;
+        private const int RCV_ANALOG_RIGHT_LR = 5;
+        private const int RCV_ANALOG_RIGHT_UD = 6;
+        private const int RCV_ANALOG_LEFT_LR = 7;
+        private const int RCV_ANALGO_LEFT_UD = 8;
+
         private const byte RCV_OK = 0x5a;
         private const byte RCV_MODE_DIGITAL = 0x82;
         private const byte RCV_MODE_ANALOG = 0xce;
+
+        private const byte ANALOG_VALUE_MIN = 0;
+        private const byte ANALOG_VALUE_CEN = 0x80;
+        private const byte ANALOG_VALUE_MAX = 0xFF;
 
         private SPI spi;
         private byte[] write = new byte[] { 0x80, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -27,6 +36,9 @@ namespace GadgeteerMtrCtrl
 
         private byte digitalUpper = 0xff;
         private byte digitalLower = 0xff;
+
+        private byte analogRightUD = 0x80;
+        private byte analogLeftUD = 0x80;
 
         private int error_cnt = 0;
         private EMode mode = EMode.Error;
@@ -166,6 +178,54 @@ namespace GadgeteerMtrCtrl
         public bool IsMaxError
         {
             get { return error_cnt >= MAX_ERROR_COUNT; }
+        }
+
+        public bool IsR1
+        {
+            get
+            {
+                return (~digitalLower & (int)EDigitalLower.R1) == (int)EDigitalLower.R1;
+            }
+        }
+
+        public bool IsR2
+        {
+            get
+            {
+                return (~digitalLower & (int)EDigitalLower.R2) == (int)EDigitalLower.R2;
+            }
+        }
+
+        public bool IsL1
+        {
+            get
+            {
+                return (~digitalLower & (int)EDigitalLower.L1) == (int)EDigitalLower.L1;
+            }
+        }
+
+        public bool IsL2
+        {
+            get
+            {
+                return (~digitalLower & (int)EDigitalLower.L2) == (int)EDigitalLower.L2;
+            }
+        }
+
+        public int RigthUpDown
+        {
+            get
+            {
+                return (int)(((analogRightUD & 0xFE) - ANALOG_VALUE_CEN) * 100 / (double)ANALOG_VALUE_CEN);
+            }
+        }
+
+        public int LeftUpDown
+        {
+            get
+            {
+                return (int)(((analogLeftUD & 0xFE) - ANALOG_VALUE_CEN) * 100 / (double)ANALOG_VALUE_CEN);
+            }
         }
 
         /// <summary>
