@@ -66,15 +66,22 @@ namespace GadgeteerMtrCtrl
             Debug.Print("Program Started");
         }
 
+        /// <summary>
+        /// コントローラー監視
+        /// </summary>
+        /// <param name="timer"></param>
         void timer_Tick(GT.Timer timer)
         {
+            // コントローラー状態更新
             if (!controller.Update())
             {
+                // 通信エラー
                 if (controller.IsMaxError)
                 {
-                    controller.ResetError();
-                    SetMotorState(0, mtrLeft, ledLeft);
-                    SetMotorState(0, mtrRight, ledRight);
+                    // 連続エラー回数が上限を超えた
+                    controller.ResetError();                // エラーカウントをリセット
+                    SetMotorState(0, mtrLeft, ledLeft);     // 左モーター停止
+                    SetMotorState(0, mtrRight, ledRight);   // 右モーター停止
                 }
 
                 return;
@@ -82,43 +89,58 @@ namespace GadgeteerMtrCtrl
 
             if (controller.IsUp)
             {
+                // 上ボタン押下なら左モーターを前進
                 SetMotorState(40, mtrLeft, ledLeft);
             }
             else if (controller.IsDown)
             {
+                // 下ボタン押下なら左モーターを後退
                 SetMotorState(-40, mtrLeft, ledLeft);
             }
             else if (controller.NotUpDown)
             {
+                // 上下ボタンどちらも非押下なら左モーターを停止
                 SetMotorState(0, mtrLeft, ledLeft);
             }
 
             if (controller.IsTriungle)
             {
+                // △ボタン押下なら右モーターを前進
                 SetMotorState(40, mtrRight, ledRight);
             }
             else if (controller.IsCross)
             {
+                // ×ボタン押下なら右モーターを後退
                 SetMotorState(-40, mtrRight, ledRight);
             }
             else if (controller.NotTriungleCross)
             {
+                // △×ボタンどちらも非押下なら右モーターを停止
                 SetMotorState(0, mtrRight, ledRight);
             }
         }
 
+        /// <summary>
+        /// モーター状態設定
+        /// </summary>
+        /// <param name="speed">速度</param>
+        /// <param name="mtr">対象モーター</param>
+        /// <param name="led">対象LED</param>
         private void SetMotorState(int speed, I2CMotrorDriver mtr, GTM.GHIElectronics.MulticolorLed led)
         {
             if (speed > 0)
             {
+                // スピードが前進ならLEDを緑に
                 led.TurnGreen();
             }
             else if (speed < 0)
             {
+                // スピードが後退ならLEDを青に
                 led.TurnBlue();
             }
             else
             {
+                // 停止ならLEDを消灯
                 led.TurnOff();
             }
 
